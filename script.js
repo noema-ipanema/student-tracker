@@ -4,6 +4,7 @@ const STORAGE_KEY = "studentTrackerData";
 const sectionLabels = {
   assignments: "Assignments",
   exams: "Exams",
+  clubMeetings: "Club Meetings",
   volunteering: "Volunteering Shifts",
   work: "Work Shifts",
 };
@@ -35,6 +36,7 @@ const formTitle = document.getElementById("formTitle");
 const summaryElements = {
   assignments: document.getElementById("upcomingAssignments"),
   exams: document.getElementById("nextExam"),
+  clubMeetings: document.getElementById("nextClubMeeting"),
   volunteering: document.getElementById("nextVolunteer"),
   work: document.getElementById("nextWork"),
 };
@@ -167,11 +169,13 @@ function renderItems() {
 function renderSummary() {
   const assignments = state.items.filter((item) => item.section === "assignments" && !item.completed && !isOverdue(item));
   const exams = getNextItem("exams");
+  const clubMeetings = getNextItem("clubMeetings");
   const volunteering = getNextItem("volunteering");
   const work = getNextItem("work");
 
   summaryElements.assignments.textContent = String(assignments.length);
   summaryElements.exams.textContent = exams ? formatSummaryDate(exams) : "No exams scheduled";
+  summaryElements.clubMeetings.textContent = clubMeetings ? formatSummaryDate(clubMeetings) : "No meetings scheduled";
   summaryElements.volunteering.textContent = volunteering ? formatSummaryDate(volunteering) : "No shifts scheduled";
   summaryElements.work.textContent = work ? formatSummaryDate(work) : "No shifts scheduled";
 }
