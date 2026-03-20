@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic & Schedule Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Personal Planner</p>
+        <h1>Academic & Schedule Tracker</h1>
+        <p class="hero-text">
+          Keep assignments, exams, volunteering, and work shifts organized in one calm, focused space.
+        </p>
+      </div>
+      <div class="hero-badge">
+        <span>Local</span>
+        <strong>Saved in your browser</strong>
+      </div>
+    </header>
+
+    <main class="app-grid">
+      <section class="summary-panel card">
+        <div class="section-heading">
+          <h2>Summary</h2>
+          <p>Your next important dates at a glance.</p>
+        </div>
+        <div class="summary-grid" id="summaryGrid">
+          <article class="summary-card">
+            <span class="summary-label">Upcoming Assignments</span>
+            <strong id="upcomingAssignments">0</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-label">Next Exam</span>
+            <strong id="nextExam">No exams scheduled</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-label">Next Volunteering Shift</span>
+            <strong id="nextVolunteer">No shifts scheduled</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-label">Next Work Shift</span>
+            <strong id="nextWork">No shifts scheduled</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="controls-panel card">
+        <div class="section-heading">
+          <h2>Planner Controls</h2>
+          <p>Switch categories, search tasks, and organize your list.</p>
+        </div>
+
+        <div class="tabs" id="tabs">
+          <button class="tab-button active" data-section="assignments">Assignments</button>
+          <button class="tab-button" data-section="exams">Exams</button>
+          <button class="tab-button" data-section="volunteering">Volunteering Shifts</button>
+          <button class="tab-button" data-section="work">Work Shifts</button>
+        </div>
+
+        <div class="toolbar">
+          <label class="search-wrapper" for="searchInput">
+            <span class="sr-only">Search items</span>
+            <input type="search" id="searchInput" placeholder="Search by title or notes">
+          </label>
+
+          <div class="toolbar-group">
+            <label for="filterSelect">Filter</label>
+            <select id="filterSelect">
+              <option value="all">All</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+
+          <button class="secondary-button" id="sortNearestButton" type="button">Sort by Nearest Date</button>
+        </div>
+      </section>
+
+      <section class="form-panel card">
+        <div class="section-heading">
+          <h2 id="formTitle">Add Assignment</h2>
+          <p>Create a new item for the currently selected section.</p>
+        </div>
+
+        <form id="itemForm" class="item-form">
+          <div class="form-row">
+            <label for="titleInput">Title</label>
+            <input id="titleInput" name="title" type="text" placeholder="Enter a title" required>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="dateInput">Date</label>
+              <input id="dateInput" name="date" type="date" required>
+            </div>
+
+            <div class="form-row">
+              <label for="timeInput">Time</label>
+              <input id="timeInput" name="time" type="time">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="notesInput">Notes</label>
+            <textarea id="notesInput" name="notes" rows="4" placeholder="Add details, reminders, or location"></textarea>
+          </div>
+
+          <button class="primary-button" type="submit">Add Item</button>
+        </form>
+      </section>
+
+      <section class="list-panel card">
+        <div class="section-heading">
+          <div>
+            <h2 id="listTitle">Assignments</h2>
+            <p id="listDescription">Track everything scheduled in this section.</p>
+          </div>
+          <span class="item-count" id="itemCount">0 items</span>
+        </div>
+
+        <div class="items-grid" id="itemsContainer"></div>
+        <div class="empty-state hidden" id="emptyState">
+          <h3>No items yet</h3>
+          <p>Add your first item to get started.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
