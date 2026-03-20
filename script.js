@@ -3,10 +3,19 @@ const STORAGE_KEY = "studentTrackerData";
 
 const sectionLabels = {
   assignments: "Assignments",
+  calendar: "Monthly Calendar",
   exams: "Exams",
   clubMeetings: "Club Meetings",
   volunteering: "Volunteering Shifts",
   work: "Work Shifts",
+};
+
+const categoryTagLabels = {
+  assignments: "Assignment",
+  exams: "Exam",
+  clubMeetings: "Club Meeting",
+  volunteering: "Volunteer",
+  work: "Work",
 };
 
 const state = {
@@ -14,6 +23,8 @@ const state = {
   filter: "all",
   search: "",
   sortNearest: true,
+  calendarDate: createMonthDate(new Date().getFullYear(), new Date().getMonth()),
+  editingItemId: null,
   items: loadItems(),
 };
 
@@ -32,6 +43,15 @@ const itemCount = document.getElementById("itemCount");
 const listTitle = document.getElementById("listTitle");
 const listDescription = document.getElementById("listDescription");
 const formTitle = document.getElementById("formTitle");
+const submitButton = form.querySelector('button[type="submit"]');
+const controlsDescription = document.querySelector(".controls-panel .section-heading p");
+const formPanel = document.querySelector(".form-panel");
+const listPanel = document.querySelector(".list-panel");
+const calendarPanel = document.getElementById("calendarPanel");
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const prevMonthButton = document.getElementById("prevMonthButton");
+const nextMonthButton = document.getElementById("nextMonthButton");
 
 const summaryElements = {
   assignments: document.getElementById("upcomingAssignments"),
@@ -52,6 +72,11 @@ function initializeApp() {
 function attachEvents() {
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
+      if (state.currentSection !== tab.dataset.section && state.editingItemId) {
+        resetFormState();
+        form.reset();
+      }
+
       state.currentSection = tab.dataset.section;
       tabs.forEach((button) => button.classList.remove("active"));
       tab.classList.add("active");
@@ -63,23 +88,37 @@ function attachEvents() {
   form.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const newItem = {
-      id: createItemId(),
-      section: state.currentSection,
+    const itemData = {
       title: titleInput.value.trim(),
       date: dateInput.value,
       time: timeInput.value,
       notes: notesInput.value.trim(),
-      completed: false,
-      createdAt: Date.now(),
     };
 
-    if (!newItem.title || !newItem.date) {
+    if (!itemData.title || !itemData.date) {
       return;
     }
 
-    state.items.push(newItem);
+    if (state.editingItemId) {
+      state.items = state.items.map((item) => {
+        if (item.id === state.editingItemId) {
+          return { ...item, ...itemData };
+        }
+
+        return item;
+      });
+    } else {
+      state.items.push({
+        id: createItemId(),
+        section: state.currentSection,
+        completed: false,
+        createdAt: Date.now(),
+        ...itemData,
+      });
+    }
+
     saveItems();
+    resetFormState();
     form.reset();
     render();
   });
@@ -99,14 +138,30 @@ function attachEvents() {
     sortNearestButton.textContent = state.sortNearest ? "Sorted by Nearest Date" : "Sort by Nearest Date";
     render();
   });
+
+  prevMonthButton.addEventListener("click", () => {
+    state.calendarDate = createMonthDate(state.calendarDate.getFullYear(), state.calendarDate.getMonth() - 1);
+    renderCalendar();
+  });
+
+  nextMonthButton.addEventListener("click", () => {
+    state.calendarDate = createMonthDate(state.calendarDate.getFullYear(), state.calendarDate.getMonth() + 1);
+    renderCalendar();
+  });
 }
 
 function render() {
+  updateViewState();
   renderItems();
+  renderCalendar();
   renderSummary();
 }
 
 function renderItems() {
+  if (state.currentSection === "calendar") {
+    return;
+  }
+
   const visibleItems = getVisibleItems();
   itemsContainer.innerHTML = "";
 
@@ -139,6 +194,9 @@ function renderItems() {
       </div>
       <p class="item-notes">${item.notes ? escapeHtml(item.notes) : "No notes added."}</p>
       <div class="item-actions">
+        <button class="action-button edit" data-action="edit" data-id="${item.id}">
+          Edit
+        </button>
         <button class="action-button complete" data-action="toggle" data-id="${item.id}">
           ${item.completed ? "Mark Incomplete" : "Mark Completed"}
         </button>
@@ -162,6 +220,10 @@ function renderItems() {
       if (action === "delete") {
         deleteItem(id);
       }
+
+      if (action === "edit") {
+        startEditingItem(id);
+      }
     });
   });
 }
@@ -178,6 +240,48 @@ function renderSummary() {
   summaryElements.clubMeetings.textContent = clubMeetings ? formatSummaryDate(clubMeetings) : "No meetings scheduled";
   summaryElements.volunteering.textContent = volunteering ? formatSummaryDate(volunteering) : "No shifts scheduled";
   summaryElements.work.textContent = work ? formatSummaryDate(work) : "No shifts scheduled";
+}
+
+function renderCalendar() {
+  calendarGrid.innerHTML = "";
+
+  const year = state.calendarDate.getFullYear();
+  const month = state.calendarDate.getMonth();
+  const monthStart = createMonthDate(year, month);
+  const startDay = monthStart.getDay();
+  const totalCells = 42;
+
+  calendarMonthLabel.textContent = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(monthStart);
+
+  for (let cellIndex = 0; cellIndex < totalCells; cellIndex += 1) {
+    const cellDate = createMonthDate(year, month, cellIndex - startDay + 1);
+    const dayItems = getItemsForDate(cellDate);
+    const dayElement = document.createElement("article");
+    const dayClasses = ["calendar-day"];
+
+    if (cellDate.getMonth() !== month) {
+      dayClasses.push("other-month");
+    }
+
+    if (getLocalDateString(cellDate) === getLocalDateString(new Date())) {
+      dayClasses.push("today");
+    }
+
+    dayElement.className = dayClasses.join(" ");
+    dayElement.innerHTML = `
+      <div class="calendar-day-header">
+        <span class="calendar-day-number">${cellDate.getDate()}</span>
+      </div>
+      <div class="calendar-day-items">
+        ${dayItems.length > 0 ? dayItems.map((item) => createCalendarItemMarkup(item)).join("") : '<span class="calendar-empty">No items</span>'}
+      </div>
+    `;
+
+    calendarGrid.appendChild(dayElement);
+  }
 }
 
 function getVisibleItems() {
@@ -219,6 +323,14 @@ function getItemStatus(item) {
   return "upcoming";
 }
 
+function getItemsForDate(date) {
+  const dateKey = getLocalDateString(date);
+
+  return state.items
+    .filter((item) => item.date === dateKey)
+    .sort((firstItem, secondItem) => getItemDate(firstItem) - getItemDate(secondItem));
+}
+
 function toggleItem(id) {
   state.items = state.items.map((item) => {
     if (item.id === id) {
@@ -234,6 +346,12 @@ function toggleItem(id) {
 
 function deleteItem(id) {
   state.items = state.items.filter((item) => item.id !== id);
+
+  if (state.editingItemId === id) {
+    resetFormState();
+    form.reset();
+  }
+
   saveItems();
   render();
 }
@@ -303,8 +421,51 @@ function formatSummaryDate(item) {
 }
 
 function updateSectionCopy() {
+  if (state.currentSection === "calendar") {
+    formTitle.textContent = "Add Item";
+    submitButton.textContent = "Add Item";
+    return;
+  }
+
   const currentLabel = sectionLabels[state.currentSection];
-  formTitle.textContent = `Add ${currentLabel.slice(0, -1)}`;
+  const singularLabel = categoryTagLabels[state.currentSection] || currentLabel.slice(0, -1);
+  formTitle.textContent = state.editingItemId ? `Edit ${singularLabel}` : `Add ${singularLabel}`;
+  submitButton.textContent = state.editingItemId ? "Save Changes" : "Add Item";
+}
+
+function updateViewState() {
+  const isCalendarView = state.currentSection === "calendar";
+
+  filterSelect.disabled = isCalendarView;
+  searchInput.disabled = isCalendarView;
+  sortNearestButton.disabled = isCalendarView;
+  formPanel.classList.toggle("hidden", isCalendarView);
+  listPanel.classList.toggle("hidden", isCalendarView);
+  calendarPanel.classList.toggle("hidden", !isCalendarView);
+  controlsDescription.textContent = isCalendarView
+    ? "Switch between planner categories or review the full monthly schedule."
+    : "Switch categories, search tasks, and organize your list.";
+}
+
+function startEditingItem(id) {
+  const itemToEdit = state.items.find((item) => item.id === id);
+
+  if (!itemToEdit) {
+    return;
+  }
+
+  state.editingItemId = id;
+  titleInput.value = itemToEdit.title;
+  dateInput.value = itemToEdit.date;
+  timeInput.value = itemToEdit.time;
+  notesInput.value = itemToEdit.notes;
+  updateSectionCopy();
+  window.scrollTo({ top: form.offsetTop - 40, behavior: "smooth" });
+}
+
+function resetFormState() {
+  state.editingItemId = null;
+  updateSectionCopy();
 }
 
 function loadItems() {
@@ -339,6 +500,31 @@ function getLocalDateString(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function createCalendarItemMarkup(item) {
+  const status = getItemStatus(item);
+  const itemClasses = ["calendar-item", item.section];
+
+  if (item.completed) {
+    itemClasses.push("completed");
+  }
+
+  if (status === "overdue") {
+    itemClasses.push("overdue");
+  }
+
+  return `
+    <article class="${itemClasses.join(" ")}">
+      <span class="calendar-item-label">${categoryTagLabels[item.section]}</span>
+      <span class="calendar-item-title">${escapeHtml(item.title)}</span>
+      <span class="calendar-item-meta">${item.time ? formatTime(item.time) : "No time set"}${item.completed ? " • Completed" : ""}</span>
+    </article>
+  `;
+}
+
+function createMonthDate(year, month, day = 1) {
+  return new Date(year, month, day);
 }
 
 function escapeHtml(value) {

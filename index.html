@@ -63,6 +63,7 @@
 
         <div class="tabs" id="tabs">
           <button class="tab-button active" data-section="assignments">Assignments</button>
+          <button class="tab-button" data-section="calendar">Monthly Calendar</button>
           <button class="tab-button" data-section="exams">Exams</button>
           <button class="tab-button" data-section="clubMeetings">Club Meetings</button>
           <button class="tab-button" data-section="volunteering">Volunteering Shifts</button>
@@ -135,6 +136,40 @@
         <div class="empty-state hidden" id="emptyState">
           <h3>No items yet</h3>
           <p>Add your first item to get started.</p>
+        </div>
+      </section>
+
+      <section class="calendar-panel card hidden" id="calendarPanel">
+        <div class="section-heading">
+          <div>
+            <h2>Monthly Calendar</h2>
+            <p>View all scheduled items across every category in one month-by-month layout.</p>
+          </div>
+          <div class="calendar-nav">
+            <button class="secondary-button calendar-button" id="prevMonthButton" type="button">Previous</button>
+            <strong class="calendar-month-label" id="calendarMonthLabel">Month Year</strong>
+            <button class="secondary-button calendar-button" id="nextMonthButton" type="button">Next</button>
+          </div>
+        </div>
+
+        <div class="calendar-shell">
+          <div class="calendar-legend" aria-label="Calendar category legend">
+            <span class="calendar-legend-item assignments">Assignments</span>
+            <span class="calendar-legend-item clubMeetings">Club Meetings</span>
+            <span class="calendar-legend-item exams">Exams</span>
+            <span class="calendar-legend-item volunteering">Volunteering Shifts</span>
+            <span class="calendar-legend-item work">Work Shifts</span>
+          </div>
+          <div class="calendar-weekdays">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
         </div>
       </section>
     </main>
