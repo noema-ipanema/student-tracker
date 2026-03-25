@@ -175,6 +175,67 @@
     </main>
   </div>
 
+  <div class="modal-overlay hidden" id="calendarEditModal" role="dialog" aria-modal="true" aria-labelledby="calendarEditTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <p class="modal-eyebrow">Calendar Edit</p>
+          <h2 id="calendarEditTitle">Edit Scheduled Item</h2>
+        </div>
+        <button class="modal-close-button" id="closeCalendarModalButton" type="button" aria-label="Close edit modal">Close</button>
+      </div>
+
+      <form class="modal-form" id="calendarEditForm">
+        <div class="form-row">
+          <label for="modalTitleInput">Title</label>
+          <input id="modalTitleInput" name="title" type="text" required>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="modalDateInput">Date</label>
+            <input id="modalDateInput" name="date" type="date" required>
+          </div>
+
+          <div class="form-row">
+            <label for="modalTimeInput">Time</label>
+            <input id="modalTimeInput" name="time" type="time">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row modal-category-row">
+            <label for="modalCategoryInput">Category</label>
+            <select id="modalCategoryInput" name="section">
+              <option value="assignments">Assignments</option>
+              <option value="clubMeetings">Club Meetings</option>
+              <option value="exams">Exams</option>
+              <option value="volunteering">Volunteering Shifts</option>
+              <option value="work">Work Shifts</option>
+            </select>
+          </div>
+
+          <label class="checkbox-row" for="modalCompletedInput">
+            <input id="modalCompletedInput" name="completed" type="checkbox">
+            <span>Completed</span>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label for="modalNotesInput">Notes</label>
+          <textarea id="modalNotesInput" name="notes" rows="4"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button class="primary-button modal-save-button" id="saveCalendarEditButton" type="submit">Save Changes</button>
+          <button class="secondary-button modal-complete-button" id="toggleCalendarCompleteButton" type="button">Mark Complete</button>
+          <button class="secondary-button modal-delete-button" id="deleteCalendarItemButton" type="button">Delete Item</button>
+          <button class="secondary-button modal-cancel-button" id="cancelCalendarEditButton" type="button">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

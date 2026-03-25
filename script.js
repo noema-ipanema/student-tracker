@@ -52,6 +52,18 @@ const calendarGrid = document.getElementById("calendarGrid");
 const calendarMonthLabel = document.getElementById("calendarMonthLabel");
 const prevMonthButton = document.getElementById("prevMonthButton");
 const nextMonthButton = document.getElementById("nextMonthButton");
+const calendarEditModal = document.getElementById("calendarEditModal");
+const calendarEditForm = document.getElementById("calendarEditForm");
+const modalTitleInput = document.getElementById("modalTitleInput");
+const modalDateInput = document.getElementById("modalDateInput");
+const modalTimeInput = document.getElementById("modalTimeInput");
+const modalNotesInput = document.getElementById("modalNotesInput");
+const modalCategoryInput = document.getElementById("modalCategoryInput");
+const modalCompletedInput = document.getElementById("modalCompletedInput");
+const closeCalendarModalButton = document.getElementById("closeCalendarModalButton");
+const cancelCalendarEditButton = document.getElementById("cancelCalendarEditButton");
+const deleteCalendarItemButton = document.getElementById("deleteCalendarItemButton");
+const toggleCalendarCompleteButton = document.getElementById("toggleCalendarCompleteButton");
 
 const summaryElements = {
   assignments: document.getElementById("upcomingAssignments"),
@@ -147,6 +159,80 @@ function attachEvents() {
   nextMonthButton.addEventListener("click", () => {
     state.calendarDate = createMonthDate(state.calendarDate.getFullYear(), state.calendarDate.getMonth() + 1);
     renderCalendar();
+  });
+
+  calendarEditForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const activeItem = getEditingItem();
+
+    if (!activeItem || !modalTitleInput.value.trim() || !modalDateInput.value) {
+      return;
+    }
+
+    state.items = state.items.map((item) => {
+      if (item.id === activeItem.id) {
+        return {
+          ...item,
+          title: modalTitleInput.value.trim(),
+          date: modalDateInput.value,
+          time: modalTimeInput.value,
+          notes: modalNotesInput.value.trim(),
+          section: modalCategoryInput.value,
+          completed: modalCompletedInput.checked,
+        };
+      }
+
+      return item;
+    });
+
+    saveItems();
+    closeCalendarModal();
+    render();
+  });
+
+  closeCalendarModalButton.addEventListener("click", closeCalendarModal);
+  cancelCalendarEditButton.addEventListener("click", closeCalendarModal);
+
+  deleteCalendarItemButton.addEventListener("click", () => {
+    const activeItem = getEditingItem();
+
+    if (!activeItem) {
+      return;
+    }
+
+    deleteItem(activeItem.id);
+    closeCalendarModal();
+  });
+
+  toggleCalendarCompleteButton.addEventListener("click", () => {
+    const activeItem = getEditingItem();
+
+    if (!activeItem) {
+      return;
+    }
+
+    toggleItem(activeItem.id);
+    const refreshedItem = state.items.find((item) => item.id === activeItem.id);
+
+    if (!refreshedItem) {
+      closeCalendarModal();
+      return;
+    }
+
+    openCalendarEditor(refreshedItem.id);
+  });
+
+  calendarEditModal.addEventListener("click", (event) => {
+    if (event.target === calendarEditModal) {
+      closeCalendarModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !calendarEditModal.classList.contains("hidden")) {
+      closeCalendarModal();
+    }
   });
 }
 
@@ -282,6 +368,12 @@ function renderCalendar() {
 
     calendarGrid.appendChild(dayElement);
   }
+
+  calendarGrid.querySelectorAll("[data-calendar-item-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openCalendarEditor(button.dataset.calendarItemId);
+    });
+  });
 }
 
 function getVisibleItems() {
@@ -468,6 +560,42 @@ function resetFormState() {
   updateSectionCopy();
 }
 
+function openCalendarEditor(id) {
+  const itemToEdit = state.items.find((item) => item.id === id);
+
+  if (!itemToEdit) {
+    return;
+  }
+
+  // The calendar modal edits the same shared item object used everywhere else in the app.
+  state.editingItemId = id;
+  modalTitleInput.value = itemToEdit.title;
+  modalDateInput.value = itemToEdit.date;
+  modalTimeInput.value = itemToEdit.time;
+  modalNotesInput.value = itemToEdit.notes;
+  modalCategoryInput.value = itemToEdit.section;
+  modalCompletedInput.checked = itemToEdit.completed;
+  toggleCalendarCompleteButton.textContent = itemToEdit.completed ? "Mark Incomplete" : "Mark Complete";
+  calendarEditModal.classList.remove("hidden");
+}
+
+function closeCalendarModal() {
+  calendarEditModal.classList.add("hidden");
+  calendarEditForm.reset();
+
+  if (state.currentSection === "calendar") {
+    state.editingItemId = null;
+  }
+}
+
+function getEditingItem() {
+  if (!state.editingItemId) {
+    return null;
+  }
+
+  return state.items.find((item) => item.id === state.editingItemId) || null;
+}
+
 function loadItems() {
   const savedItems = localStorage.getItem(STORAGE_KEY);
 
@@ -504,7 +632,7 @@ function getLocalDateString(date) {
 
 function createCalendarItemMarkup(item) {
   const status = getItemStatus(item);
-  const itemClasses = ["calendar-item", item.section];
+  const itemClasses = ["calendar-item", "calendar-item-button", item.section];
 
   if (item.completed) {
     itemClasses.push("completed");
@@ -515,11 +643,11 @@ function createCalendarItemMarkup(item) {
   }
 
   return `
-    <article class="${itemClasses.join(" ")}">
+    <button class="${itemClasses.join(" ")}" type="button" data-calendar-item-id="${item.id}">
       <span class="calendar-item-label">${categoryTagLabels[item.section]}</span>
       <span class="calendar-item-title">${escapeHtml(item.title)}</span>
       <span class="calendar-item-meta">${item.time ? formatTime(item.time) : "No time set"}${item.completed ? " • Completed" : ""}</span>
-    </article>
+    </button>
   `;
 }
 
